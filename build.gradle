@@ -1,0 +1,110 @@
+group 'rest-countries'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'scala'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+
+repositories {
+    mavenCentral()
+    maven {
+        url 'http://repository.excilys.com/content/groups/public'
+    }
+}
+
+
+dependencies {
+    compile 'org.scala-lang:scala-library:2.11.7'
+    testCompile 'io.gatling.highcharts:gatling-charts-highcharts:2.1.+'
+}
+
+sourceSets {
+    test {
+        resources {
+            srcDir 'conf'
+        }
+    }
+}
+
+task gatling(dependsOn: 'compileTestScala') << {
+
+    def absPath = System.getProperty("user.dir");
+
+    // target/test-classes is required by gatling to be run
+    def targetTestClassesFolder = new File(absPath, 'target/test-classes')
+    targetTestClassesFolder.mkdirs()
+
+    // create build/reports folder
+    def targetReportsFolder = new File(project.buildDir.absolutePath, '/reports')
+    targetReportsFolder.mkdirs()
+
+    // if only one
+    if (project.hasProperty("sim")) {
+
+        def gatlingScenarioClass = sim
+
+        logger.lifecycle(" ---- Executing single Gatling Simulations: ${gatlingScenarioClass} ----")
+
+        runGatlingSimulation(gatlingScenarioClass)
+
+    } else {
+
+        logger.lifecycle(" ---- Executing all Gatling Simulations from: ${sourceSets.test.output.classesDir} ----")
+
+        sourceSets.test.output.classesDir.eachFileRecurse { file ->
+            if (file.isFile()) {
+
+                def gatlingScenarioClass = (file.getPath() - (sourceSets.test.output.classesDir.getPath() + File.separator) - '.class')
+                        .replace(File.separator, '.')
+
+                runGatlingSimulation(gatlingScenarioClass)
+            }
+        }
+    }
+
+    logger.lifecycle(" ---- Done executing all Gatling scenarios ----")
+}
+
+// List all gatling simulations
+task listSims(dependsOn: 'compileTestScala') << {
+    logger.lifecycle("\nListing all Gatling Simulations from: ${sourceSets.test.output.classesDir}:")
+
+    logger.lifecycle("")
+    sourceSets.test.output.classesDir.eachFileRecurse { file ->
+        if (file.isFile()) {
+
+            def gatlingScenarioClass = (file.getPath() - (sourceSets.test.output.classesDir.getPath() + File.separator) - '.class')
+                    .replace(File.separator, '.')
+
+            def foundGatlingSim = gatlingScenarioClass.lastIndexOf("Simulation");
+
+            if (foundGatlingSim > 0) {
+                logger.lifecycle("\t${gatlingScenarioClass}")
+            }
+        }
+    }
+}
+
+
+def runGatlingSimulation(gatlingScenarioClass) {
+
+    def absPath = System.getProperty("user.dir");
+
+    javaexec {
+        if (project.hasProperty('jvmArgs')) {
+            jvmArgs project.jvmArgs.split('\\s+')
+        }
+
+        main = 'io.gatling.app.Gatling'
+        classpath = sourceSets.test.output + sourceSets.test.runtimeClasspath
+        args '-sf', sourceSets.test.output.classesDir,
+                '-s', gatlingScenarioClass,
+                '-rf', project.buildDir.absolutePath + '/reports/',
+                '-df', absPath + '/data/'
+    }
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.2'
+}
