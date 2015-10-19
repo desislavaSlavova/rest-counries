@@ -38,4 +38,13 @@ object Actions {
 
   }
 
+  def getByCountryCodeName(): ChainBuilder = {
+    exec(http("get by country name")
+    .get("/name/norge")
+    .headers(sentHeaders)
+    .check(status.is(200)))
+  }
+
+
+
 }
