@@ -11,6 +11,8 @@ object Actions {
   val httpConf=http.baseURL("https://restcountries-v1.p.mashape.com")
   val sentHeaders = Map("Accept" -> "application/json","X-Mashape-Key" -> "MDFfil2uifmsh7f2JYJlGxiSMiMyp1iL5uDjsnIyJYHDmRmnbU" )
   //val countryCodeFeeder =Array(Map("countrycode" -> "ru", "countrycode" -> "uk")).random //csv("data/countrycode.csv").circular
+ val callingCodeFeeder = csv("data/callingcode.csv").random
+  val coutryCodefeeder = csv("data/countrycode.csv").circular
 
   def getAllTheCountries() : ChainBuilder={
     exec(http("get all the countries")
@@ -23,7 +25,7 @@ object Actions {
   def  getByCountryCode() : ChainBuilder={
     //feed(countryCodeFeeder)
     exec(http("get by country code")
-      .get("/alpha/ru")
+      .get("/alpha/${countrycode}")
 
       .headers(sentHeaders)
       .check(status.is(200)))
@@ -41,6 +43,14 @@ object Actions {
   def getByCountryCodeName(): ChainBuilder = {
     exec(http("get by country name")
     .get("/name/norge")
+    .headers(sentHeaders)
+    .check(status.is(200)))
+  }
+
+  def searchByCallingCode() : ChainBuilder = {
+    //feed(csv("callingcode.csv").random)
+    exec(http("Search by Calling Code")
+    .get("/callingcode/${callingcode}")
     .headers(sentHeaders)
     .check(status.is(200)))
   }

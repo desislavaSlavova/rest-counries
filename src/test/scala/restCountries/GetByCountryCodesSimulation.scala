@@ -7,5 +7,5 @@ import io.gatling.core.Predef._
  */
 class GetByCountryCodesSimulation extends Simulation {
  val scn=scenario("Get By Country Codes").exec(Actions.getByCountryCodes())
-  setUp(scn.inject(atOnceUsers(2)).protocols(Actions.httpConf))
+  setUp(scn.inject(atOnceUsers(5)).protocols(Actions.httpConf))
 }
